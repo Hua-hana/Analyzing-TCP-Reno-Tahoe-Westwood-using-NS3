@@ -2,12 +2,12 @@ APPLICATION 6
 ====================
 
 ##### Requirements:
-- ns-3.20
+- ns-3
 - gnuplot
 
 ##### How to run?
-- Copy application6.cc to /home/.../ns-allinone-3.20/ns-3.20/scratch
-- Copy ass4.sh to /home/.../ns-allinone-3.20/ns-3.20/
+- Copy app7.cc to /net/ns-3-allinone/ns-3-dev/scratch
+- Copy ass4.sh to /net/ns-3-allinone/ns-3-dev
 
 ##### Execute following commands:
 - chmod +x ass4.sh
