@@ -242,11 +242,11 @@ Ptr<Socket> uniFlow(Address sinkAddress,
 					double appStopTime) {
 
 	if(tcpVariant.compare("TcpReno") == 0) {
-		Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpReno::GetTypeId()));
-	} else if(tcpVariant.compare("TcpTahoe") == 0) {
-		Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpTahoe::GetTypeId()));
-	} else if(tcpVariant.compare("TcpWestwood") == 0) {
-		Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpWestwood::GetTypeId()));
+		Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpLinuxReno::GetTypeId()));
+	} else if(tcpVariant.compare("TcpNewReno") == 0) {
+		Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpNewReno::GetTypeId()));
+	} else if(tcpVariant.compare("TcpBic") == 0) {
+		Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpBic::GetTypeId()));
 	} else {
 		fprintf(stderr, "Invalid TCP version\n");
 		exit(EXIT_FAILURE);
@@ -276,15 +276,15 @@ void partAC() {
 	std::string latencyRR = "50ms";
 
 	uint packetSize = 1.2*1024;		//1.2KB
-	uint queueSizeHR = (100000*20)/packetSize;
-	uint queueSizeRR = (10000*50)/packetSize;
+	//uint queueSizeHR = (100000*20)/packetSize;
+	//uint queueSizeRR = (10000*50)/packetSize;
 
 	uint numSender = 3;
 
 	double errorP = ERROR;
 
 	//set droptail queue mode as packets i.e. to use maxpackets as queuesize metric not bytes
-	Config::SetDefault("ns3::DropTailQueue::Mode", StringValue("QUEUE_MODE_PACKETS"));
+	//Config::SetDefault("ns3::DropTailQueue::Mode", StringValue("QUEUE_MODE_PACKETS"));
     /*
     Config::SetDefault("ns3::DropTailQueue::MaxPackets", UintegerValue(queuesize));
 	*/
@@ -298,10 +298,8 @@ void partAC() {
 		ReceiveErrorModel
 		InterframeGap: The time to wait between packet (frame) transmissions
 		TxQueue: A queue to use as the transmit queue in the device.
-
 		SetChannelAttribute: sets attributes of pointToPointChannel
 		Delay: Transmission delay through the channel
-
 		SetQueue: sets attribute of a queue say droptailqueue
 		Mode: Whether to use Bytes (see MaxBytes) or Packets (see MaxPackets) as the maximum queue size metric.
 		MaxPackets: The maximum number of packets accepted by this DropTailQueue.
@@ -309,10 +307,10 @@ void partAC() {
 	*/
 	p2pHR.SetDeviceAttribute("DataRate", StringValue(rateHR));
 	p2pHR.SetChannelAttribute("Delay", StringValue(latencyHR));
-	p2pHR.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queueSizeHR));
+	//p2pHR.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queueSizeHR));
 	p2pRR.SetDeviceAttribute("DataRate", StringValue(rateRR));
 	p2pRR.SetChannelAttribute("Delay", StringValue(latencyRR));
-	p2pRR.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queueSizeRR));
+	//p2pRR.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queueSizeRR));
 
 	//Adding some errorrate
 	/*
@@ -419,10 +417,10 @@ void partAC() {
 
 	//TCP Reno from H1 to H4
 	AsciiTraceHelper asciiTraceHelper;
-	Ptr<OutputStreamWrapper> stream1CWND = asciiTraceHelper.CreateFileStream("application_6_h1_h4_a.cwnd");
-	Ptr<OutputStreamWrapper> stream1PD = asciiTraceHelper.CreateFileStream("application_6_h1_h4_a.congestion_loss");
-	Ptr<OutputStreamWrapper> stream1TP = asciiTraceHelper.CreateFileStream("application_6_h1_h4_a.tp");
-	Ptr<OutputStreamWrapper> stream1GP = asciiTraceHelper.CreateFileStream("application_6_h1_h4_a.gp");
+	Ptr<OutputStreamWrapper> stream1CWND = asciiTraceHelper.CreateFileStream("app7_h1_h4_a.cwnd");
+	Ptr<OutputStreamWrapper> stream1PD = asciiTraceHelper.CreateFileStream("app7_h1_h4_a.congestion_loss");
+	Ptr<OutputStreamWrapper> stream1TP = asciiTraceHelper.CreateFileStream("app7_h1_h4_a.tp");
+	Ptr<OutputStreamWrapper> stream1GP = asciiTraceHelper.CreateFileStream("app7_h1_h4_a.gp");
 	Ptr<Socket> ns3TcpSocket1 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(0), port), port, "TcpReno", senders.Get(0), receivers.Get(0), netDuration, netDuration+durationGap, packetSize, numPackets, transferSpeed, netDuration, netDuration+durationGap);
 	ns3TcpSocket1->TraceConnectWithoutContext("CongestionWindow", MakeBoundCallback (&CwndChange, stream1CWND, netDuration));
 	ns3TcpSocket1->TraceConnectWithoutContext("Drop", MakeBoundCallback (&packetDrop, stream1PD, netDuration, 1));
@@ -437,12 +435,12 @@ void partAC() {
 	netDuration += durationGap;
 
 
-	//TCP Tahoe from H2 to H5
-	Ptr<OutputStreamWrapper> stream2CWND = asciiTraceHelper.CreateFileStream("application_6_h2_h5_a.cwnd");
-	Ptr<OutputStreamWrapper> stream2PD = asciiTraceHelper.CreateFileStream("application_6_h2_h5_a.congestion_loss");
-	Ptr<OutputStreamWrapper> stream2TP = asciiTraceHelper.CreateFileStream("application_6_h2_h5_a.tp");
-	Ptr<OutputStreamWrapper> stream2GP = asciiTraceHelper.CreateFileStream("application_6_h2_h5_a.gp");
-	Ptr<Socket> ns3TcpSocket2 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(1), port), port, "TcpTahoe", senders.Get(1), receivers.Get(1), netDuration, netDuration+durationGap, packetSize, numPackets, transferSpeed, netDuration, netDuration+durationGap);
+	//TCP NewReno from H2 to H5
+	Ptr<OutputStreamWrapper> stream2CWND = asciiTraceHelper.CreateFileStream("app7_h2_h5_a.cwnd");
+	Ptr<OutputStreamWrapper> stream2PD = asciiTraceHelper.CreateFileStream("app7_h2_h5_a.congestion_loss");
+	Ptr<OutputStreamWrapper> stream2TP = asciiTraceHelper.CreateFileStream("app7_h2_h5_a.tp");
+	Ptr<OutputStreamWrapper> stream2GP = asciiTraceHelper.CreateFileStream("app7_h2_h5_a.gp");
+	Ptr<Socket> ns3TcpSocket2 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(1), port), port, "TcpNewReno", senders.Get(1), receivers.Get(1), netDuration, netDuration+durationGap, packetSize, numPackets, transferSpeed, netDuration, netDuration+durationGap);
 	ns3TcpSocket2->TraceConnectWithoutContext("CongestionWindow", MakeBoundCallback (&CwndChange, stream2CWND, netDuration));
 	ns3TcpSocket2->TraceConnectWithoutContext("Drop", MakeBoundCallback (&packetDrop, stream2PD, netDuration, 2));
 
@@ -452,12 +450,12 @@ void partAC() {
 	Config::Connect(sink_, MakeBoundCallback(&ReceivedPacketIPV4, stream2TP, netDuration));
 	netDuration += durationGap;
 
-	//TCP WestWood from H3 to H6
-	Ptr<OutputStreamWrapper> stream3CWND = asciiTraceHelper.CreateFileStream("application_6_h3_h6_a.cwnd");
-	Ptr<OutputStreamWrapper> stream3PD = asciiTraceHelper.CreateFileStream("application_6_h3_h6_a.congestion_loss");
-	Ptr<OutputStreamWrapper> stream3TP = asciiTraceHelper.CreateFileStream("application_6_h3_h6_a.tp");
-	Ptr<OutputStreamWrapper> stream3GP = asciiTraceHelper.CreateFileStream("application_6_h3_h6_a.gp");
-	Ptr<Socket> ns3TcpSocket3 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(2), port), port, "TcpWestwood", senders.Get(2), receivers.Get(2), netDuration, netDuration+durationGap, packetSize, numPackets, transferSpeed, netDuration, netDuration+durationGap);
+	//TCP Bic from H3 to H6
+	Ptr<OutputStreamWrapper> stream3CWND = asciiTraceHelper.CreateFileStream("app7_h3_h6_a.cwnd");
+	Ptr<OutputStreamWrapper> stream3PD = asciiTraceHelper.CreateFileStream("app7_h3_h6_a.congestion_loss");
+	Ptr<OutputStreamWrapper> stream3TP = asciiTraceHelper.CreateFileStream("app7_h3_h6_a.tp");
+	Ptr<OutputStreamWrapper> stream3GP = asciiTraceHelper.CreateFileStream("app7_h3_h6_a.gp");
+	Ptr<Socket> ns3TcpSocket3 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(2), port), port, "TcpBic", senders.Get(2), receivers.Get(2), netDuration, netDuration+durationGap, packetSize, numPackets, transferSpeed, netDuration, netDuration+durationGap);
 	ns3TcpSocket3->TraceConnectWithoutContext("CongestionWindow", MakeBoundCallback (&CwndChange, stream3CWND, netDuration));
 	ns3TcpSocket3->TraceConnectWithoutContext("Drop", MakeBoundCallback (&packetDrop, stream3PD, netDuration, 3));
 
@@ -467,8 +465,8 @@ void partAC() {
 	Config::Connect(sink_, MakeBoundCallback(&ReceivedPacketIPV4, stream3TP, netDuration));
 	netDuration += durationGap;
 
-	//p2pHR.EnablePcapAll("application_6__a");
-	//p2pRR.EnablePcapAll("application_6_RR_a");
+	//p2pHR.EnablePcapAll("app7__a");
+	//p2pRR.EnablePcapAll("app7_RR_a");
 
 	//Turning on Static Global Routing
 	Ipv4GlobalRoutingHelper::PopulateRoutingTables();
@@ -480,7 +478,7 @@ void partAC() {
 	Simulator::Run();
 	flowmon->CheckForLostPackets();
 
-	//Ptr<OutputStreamWrapper> streamTP = asciiTraceHelper.CreateFileStream("application_6_a.tp");
+	//Ptr<OutputStreamWrapper> streamTP = asciiTraceHelper.CreateFileStream("app7_a.tp");
 	Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmonHelper.GetClassifier());
 	std::map<FlowId, FlowMonitor::FlowStats> stats = flowmon->GetFlowStats();
 	for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin(); i != stats.end(); ++i) {
@@ -503,7 +501,7 @@ void partAC() {
 		} else if(t.sourceAddress == "10.1.1.1") {
 			if(mapDrop.find(2)==mapDrop.end())
 				mapDrop[2] = 0;
-			*stream2PD->GetStream() << "Tcp Tahoe Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+			*stream2PD->GetStream() << "Tcp NewReno Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
 			*stream2PD->GetStream()  << "Net Packet Lost: " << i->second.lostPackets << "\n";
 			*stream2PD->GetStream()  << "Packet Lost due to buffer overflow: " << mapDrop[2] << "\n";
 			*stream2PD->GetStream()  << "Packet Lost due to Congestion: " << i->second.lostPackets - mapDrop[2] << "\n";
@@ -511,7 +509,7 @@ void partAC() {
 		} else if(t.sourceAddress == "10.1.2.1") {
 			if(mapDrop.find(3)==mapDrop.end())
 				mapDrop[3] = 0;
-			*stream3PD->GetStream() << "Tcp WestWood Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+			*stream3PD->GetStream() << "Tcp Bic Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
 			*stream3PD->GetStream()  << "Net Packet Lost: " << i->second.lostPackets << "\n";
 			*stream3PD->GetStream()  << "Packet Lost due to buffer overflow: " << mapDrop[3] << "\n";
 			*stream3PD->GetStream()  << "Packet Lost due to Congestion: " << i->second.lostPackets - mapDrop[3] << "\n";
@@ -519,7 +517,7 @@ void partAC() {
 		}
 	}
 
-	//flowmon->SerializeToXmlFile("application_6_a.flowmon", true, true);
+	//flowmon->SerializeToXmlFile("app7_a.flowmon", true, true);
 	Simulator::Destroy();
 }
 
@@ -532,15 +530,15 @@ void partBC() {
 	std::string latencyRR = "50ms";
 
 	uint packetSize = 1.2*1024;		//1.2KB
-	uint queueSizeHR = (100000*20)/packetSize;
-	uint queueSizeRR = (10000*50)/packetSize;
+	//uint queueSizeHR = (100000*20)/packetSize;
+	//uint queueSizeRR = (10000*50)/packetSize;
 
 	uint numSender = 3;
 
 	double errorP = ERROR;
 
 
-	Config::SetDefault("ns3::DropTailQueue::Mode", StringValue("QUEUE_MODE_PACKETS"));
+	//Config::SetDefault("ns3::DropTailQueue::Mode", StringValue("QUEUE_MODE_PACKETS"));
     /*
     Config::SetDefault("ns3::DropTailQueue::MaxPackets", UintegerValue(queuesize));
 	*/
@@ -549,10 +547,10 @@ void partBC() {
 	PointToPointHelper p2pHR, p2pRR;
 	p2pHR.SetDeviceAttribute("DataRate", StringValue(rateHR));
 	p2pHR.SetChannelAttribute("Delay", StringValue(latencyHR));
-	p2pHR.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queueSizeHR));
+	//p2pHR.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queueSizeHR));
 	p2pRR.SetDeviceAttribute("DataRate", StringValue(rateRR));
 	p2pRR.SetChannelAttribute("Delay", StringValue(latencyRR));
-	p2pRR.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queueSizeRR));
+	//p2pRR.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queueSizeRR));
 
 	//Adding some errorrate
 	Ptr<RateErrorModel> em = CreateObjectWithAttributes<RateErrorModel> ("ErrorRate", DoubleValue (errorP));
@@ -630,10 +628,10 @@ void partBC() {
 	
 	//TCP Reno from H1 to H4
 	AsciiTraceHelper asciiTraceHelper;
-	Ptr<OutputStreamWrapper> stream1CWND = asciiTraceHelper.CreateFileStream("application_6_h1_h4_b.cwnd");
-	Ptr<OutputStreamWrapper> stream1PD = asciiTraceHelper.CreateFileStream("application_6_h1_h4_b.congestion_loss");
-	Ptr<OutputStreamWrapper> stream1TP = asciiTraceHelper.CreateFileStream("application_6_h1_h4_b.tp");
-	Ptr<OutputStreamWrapper> stream1GP = asciiTraceHelper.CreateFileStream("application_6_h1_h4_b.gp");
+	Ptr<OutputStreamWrapper> stream1CWND = asciiTraceHelper.CreateFileStream("app7_h1_h4_b.cwnd");
+	Ptr<OutputStreamWrapper> stream1PD = asciiTraceHelper.CreateFileStream("app7_h1_h4_b.congestion_loss");
+	Ptr<OutputStreamWrapper> stream1TP = asciiTraceHelper.CreateFileStream("app7_h1_h4_b.tp");
+	Ptr<OutputStreamWrapper> stream1GP = asciiTraceHelper.CreateFileStream("app7_h1_h4_b.gp");
 	Ptr<Socket> ns3TcpSocket1 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(0), port), port, "TcpReno", senders.Get(0), receivers.Get(0), oneFlowStart, oneFlowStart+durationGap, packetSize, numPackets, transferSpeed, oneFlowStart, oneFlowStart+durationGap);
 	ns3TcpSocket1->TraceConnectWithoutContext("CongestionWindow", MakeBoundCallback (&CwndChange, stream1CWND, 0));
 	ns3TcpSocket1->TraceConnectWithoutContext("Drop", MakeBoundCallback (&packetDrop, stream1PD, 0, 1));
@@ -644,12 +642,12 @@ void partBC() {
 	std::string sink_ = "/NodeList/5/$ns3::Ipv4L3Protocol/Rx";
 	Config::Connect(sink_, MakeBoundCallback(&ReceivedPacketIPV4, stream1TP, 0));
 
-	//TCP Tahoe from H2 to H5
-	Ptr<OutputStreamWrapper> stream2CWND = asciiTraceHelper.CreateFileStream("application_6_h2_h5_b.cwnd");
-	Ptr<OutputStreamWrapper> stream2PD = asciiTraceHelper.CreateFileStream("application_6_h2_h5_b.congestion_loss");
-	Ptr<OutputStreamWrapper> stream2TP = asciiTraceHelper.CreateFileStream("application_6_h2_h5_b.tp");
-	Ptr<OutputStreamWrapper> stream2GP = asciiTraceHelper.CreateFileStream("application_6_h2_h5_b.gp");
-	Ptr<Socket> ns3TcpSocket2 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(1), port), port, "TcpTahoe", senders.Get(1), receivers.Get(1), otherFlowStart, otherFlowStart+durationGap, packetSize, numPackets, transferSpeed, otherFlowStart, otherFlowStart+durationGap);
+	//TCP NewReno from H2 to H5
+	Ptr<OutputStreamWrapper> stream2CWND = asciiTraceHelper.CreateFileStream("app7_h2_h5_b.cwnd");
+	Ptr<OutputStreamWrapper> stream2PD = asciiTraceHelper.CreateFileStream("app7_h2_h5_b.congestion_loss");
+	Ptr<OutputStreamWrapper> stream2TP = asciiTraceHelper.CreateFileStream("app7_h2_h5_b.tp");
+	Ptr<OutputStreamWrapper> stream2GP = asciiTraceHelper.CreateFileStream("app7_h2_h5_b.gp");
+	Ptr<Socket> ns3TcpSocket2 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(1), port), port, "TcpNewReno", senders.Get(1), receivers.Get(1), otherFlowStart, otherFlowStart+durationGap, packetSize, numPackets, transferSpeed, otherFlowStart, otherFlowStart+durationGap);
 	ns3TcpSocket2->TraceConnectWithoutContext("CongestionWindow", MakeBoundCallback (&CwndChange, stream2CWND, 0));
 	ns3TcpSocket2->TraceConnectWithoutContext("Drop", MakeBoundCallback (&packetDrop, stream2PD, 0, 2));
 
@@ -658,12 +656,12 @@ void partBC() {
 	sink_ = "/NodeList/6/$ns3::Ipv4L3Protocol/Rx";
 	Config::Connect(sink_, MakeBoundCallback(&ReceivedPacketIPV4, stream2TP, 0));
 
-	//TCP WestWood from H3 to H6
-	Ptr<OutputStreamWrapper> stream3CWND = asciiTraceHelper.CreateFileStream("application_6_h3_h6_b.cwnd");
-	Ptr<OutputStreamWrapper> stream3PD = asciiTraceHelper.CreateFileStream("application_6_h3_h6_b.congestion_loss");
-	Ptr<OutputStreamWrapper> stream3TP = asciiTraceHelper.CreateFileStream("application_6_h3_h6_b.tp");
-	Ptr<OutputStreamWrapper> stream3GP = asciiTraceHelper.CreateFileStream("application_6_h3_h6_b.gp");
-	Ptr<Socket> ns3TcpSocket3 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(2), port), port, "TcpWestwood", senders.Get(2), receivers.Get(2), otherFlowStart, otherFlowStart+durationGap, packetSize, numPackets, transferSpeed, otherFlowStart, otherFlowStart+durationGap);
+	//TCP Bic from H3 to H6
+	Ptr<OutputStreamWrapper> stream3CWND = asciiTraceHelper.CreateFileStream("app7_h3_h6_b.cwnd");
+	Ptr<OutputStreamWrapper> stream3PD = asciiTraceHelper.CreateFileStream("app7_h3_h6_b.congestion_loss");
+	Ptr<OutputStreamWrapper> stream3TP = asciiTraceHelper.CreateFileStream("app7_h3_h6_b.tp");
+	Ptr<OutputStreamWrapper> stream3GP = asciiTraceHelper.CreateFileStream("app7_h3_h6_b.gp");
+	Ptr<Socket> ns3TcpSocket3 = uniFlow(InetSocketAddress(receiverIFCs.GetAddress(2), port), port, "TcpBic", senders.Get(2), receivers.Get(2), otherFlowStart, otherFlowStart+durationGap, packetSize, numPackets, transferSpeed, otherFlowStart, otherFlowStart+durationGap);
 	ns3TcpSocket3->TraceConnectWithoutContext("CongestionWindow", MakeBoundCallback (&CwndChange, stream3CWND, 0));
 	ns3TcpSocket3->TraceConnectWithoutContext("Drop", MakeBoundCallback (&packetDrop, stream3PD, 0, 3));
 
@@ -672,8 +670,8 @@ void partBC() {
 	sink_ = "/NodeList/7/$ns3::Ipv4L3Protocol/Rx";
 	Config::Connect(sink_, MakeBoundCallback(&ReceivedPacketIPV4, stream3TP, 0));
 
-	//p2pHR.EnablePcapAll("application_6_HR_a");
-	//p2pRR.EnablePcapAll("application_6_RR_a");
+	//p2pHR.EnablePcapAll("app7_HR_a");
+	//p2pRR.EnablePcapAll("app7_RR_a");
 
 	//Turning on Static Global Routing
 	Ipv4GlobalRoutingHelper::PopulateRoutingTables();
@@ -685,7 +683,7 @@ void partBC() {
 	Simulator::Run();
 	flowmon->CheckForLostPackets();
 
-	//Ptr<OutputStreamWrapper> streamTP = asciiTraceHelper.CreateFileStream("application_6_b.tp");
+	//Ptr<OutputStreamWrapper> streamTP = asciiTraceHelper.CreateFileStream("app7_b.tp");
 	Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmonHelper.GetClassifier());
 	std::map<FlowId, FlowMonitor::FlowStats> stats = flowmon->GetFlowStats();
 	for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin(); i != stats.end(); ++i) {
@@ -708,7 +706,7 @@ void partBC() {
 		} else if(t.sourceAddress == "10.1.1.1") {
 			if(mapDrop.find(2)==mapDrop.end())
 				mapDrop[2] = 0;
-			*stream2PD->GetStream() << "TcpTahoe Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+			*stream2PD->GetStream() << "TcpNewReno Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
 			*stream2PD->GetStream()  << "Net Packet Lost: " << i->second.lostPackets << "\n";
 			*stream2PD->GetStream()  << "Packet Lost due to buffer overflow: " << mapDrop[2] << "\n";
 			*stream2PD->GetStream()  << "Packet Lost due to Congestion: " << i->second.lostPackets - mapDrop[2] << "\n";
@@ -716,7 +714,7 @@ void partBC() {
 		} else if(t.sourceAddress == "10.1.2.1") {
 			if(mapDrop.find(3)==mapDrop.end())
 				mapDrop[3] = 0;
-			*stream3PD->GetStream() << "TcpWestWood Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+			*stream3PD->GetStream() << "TcpBic Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
 			*stream3PD->GetStream()  << "Net Packet Lost: " << i->second.lostPackets << "\n";
 			*stream3PD->GetStream()  << "Packet Lost due to buffer overflow: " << mapDrop[3] << "\n";
 			*stream3PD->GetStream()  << "Packet Lost due to Congestion: " << i->second.lostPackets - mapDrop[3] << "\n";
@@ -724,7 +722,7 @@ void partBC() {
 		}
 	}
 
-	//flowmon->SerializeToXmlFile("application_6_b.flowmon", true, true);
+	//flowmon->SerializeToXmlFile("app7_b.flowmon", true, true);
 	Simulator::Destroy();
 
 }
